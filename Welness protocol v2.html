@@ -1,0 +1,937 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Wellness Protocol Calculator — SkinnyRoti</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Rowdies:wght@300;400;700&family=Nunito:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='6' fill='%234E6A3E'/><text x='16' y='22' text-anchor='middle' font-size='16'>💊</text></svg>">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --eggshell: #EEE5D3;
+      --fern: #4E6A3E;
+      --chill-red: #D64A32;
+      --evergreen: #074B29;
+      --apple-green: #40AD50;
+      --sprout: #B0D897;
+      --wattle: #D3D350;
+      --white-smoke: #F2F8EE;
+      --divider: rgba(78, 106, 62, 0.15);
+    }
+
+    body {
+      font-family: 'Nunito', sans-serif;
+      background: var(--eggshell);
+      color: var(--evergreen);
+      min-height: 100vh;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    .app {
+      max-width: 520px;
+      margin: 0 auto;
+      padding: 24px 16px 48px;
+    }
+
+    /* Step Indicator */
+    .step-indicator {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      margin-bottom: 32px;
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--fern);
+      font-family: 'Nunito', sans-serif;
+    }
+    .step-dot {
+      width: 8px; height: 8px; border-radius: 50%;
+      background: var(--sprout);
+      transition: background 0.3s;
+    }
+    .step-dot.active {
+      background: var(--fern);
+    }
+    .step-bar {
+      width: 32px; height: 2px;
+      background: var(--sprout);
+    }
+
+    /* Header */
+    .header { text-align: center; margin-bottom: 36px; }
+    .header h1 {
+      font-family: 'Rowdies', cursive;
+      font-size: 26px; font-weight: 700;
+      color: var(--fern);
+      margin-bottom: 10px;
+      line-height: 1.3;
+    }
+    .header p {
+      font-size: 14px; color: var(--evergreen);
+      line-height: 1.6; font-weight: 400;
+      opacity: 0.75;
+    }
+
+    /* Section Labels */
+    .section-label {
+      font-family: 'Rowdies', cursive;
+      font-size: 13px; font-weight: 400;
+      color: var(--fern);
+      text-transform: uppercase;
+      letter-spacing: 1.2px;
+      margin-bottom: 14px;
+    }
+
+    /* Checkbox Grid */
+    .checkbox-group { margin-bottom: 32px; }
+    .checkbox-grid {
+      display: flex; flex-direction: column; gap: 10px;
+    }
+    .checkbox-item {
+      display: flex; align-items: center; gap: 14px;
+      background: var(--white-smoke);
+      border: 1.5px solid var(--divider);
+      border-radius: 12px;
+      padding: 14px 16px;
+      cursor: pointer;
+      transition: border-color 0.2s, background 0.2s, box-shadow 0.2s;
+      user-select: none;
+      -webkit-tap-highlight-color: transparent;
+    }
+    .checkbox-item:hover { border-color: var(--fern); }
+    .checkbox-item.selected {
+      border-color: var(--chill-red);
+      background: rgba(214, 74, 50, 0.06);
+      box-shadow: 0 0 0 1px rgba(214, 74, 50, 0.15);
+    }
+    .check-box {
+      width: 22px; height: 22px; min-width: 22px;
+      border: 2px solid var(--sprout);
+      border-radius: 6px;
+      display: flex; align-items: center; justify-content: center;
+      transition: all 0.2s;
+    }
+    .checkbox-item.selected .check-box {
+      border-color: var(--chill-red);
+      background: var(--chill-red);
+    }
+    .check-icon {
+      opacity: 0; transition: opacity 0.2s;
+      color: #fff; font-size: 13px; line-height: 1;
+    }
+    .checkbox-item.selected .check-icon { opacity: 1; }
+    .checkbox-label {
+      font-size: 14px; font-weight: 600; line-height: 1.3;
+      color: var(--evergreen);
+    }
+
+    /* Divider */
+    .section-divider {
+      height: 1px; background: var(--divider);
+      margin: 8px 0 32px;
+    }
+
+    /* CTA Button */
+    .cta-btn {
+      width: 100%;
+      padding: 16px 24px;
+      border: none;
+      border-radius: 14px;
+      background: var(--fern);
+      color: var(--eggshell);
+      font-family: 'Rowdies', cursive;
+      font-size: 16px;
+      font-weight: 400;
+      letter-spacing: 0.5px;
+      cursor: pointer;
+      transition: opacity 0.2s, transform 0.1s;
+    }
+    .cta-btn:hover { opacity: 0.9; }
+    .cta-btn:active { transform: scale(0.98); }
+    .cta-btn:disabled {
+      opacity: 0.4; cursor: not-allowed; transform: none;
+    }
+
+    /* Results Screen */
+    .screen { display: none; }
+    .screen.active { display: block; }
+
+    .result-card {
+      background: var(--evergreen);
+      border-radius: 16px;
+      padding: 22px 20px;
+      margin-bottom: 16px;
+      color: var(--eggshell);
+    }
+    .result-card-header {
+      display: flex; align-items: center; gap: 10px;
+      margin-bottom: 18px;
+    }
+    .result-card-header .icon { font-size: 20px; }
+    .result-card-header h3 {
+      font-family: 'Rowdies', cursive;
+      font-size: 15px; font-weight: 400;
+      text-transform: uppercase;
+      letter-spacing: 0.8px;
+      color: var(--eggshell);
+    }
+
+    /* Supplement Items */
+    .supplement-item {
+      padding: 14px 0;
+      border-bottom: 1px solid rgba(238, 229, 211, 0.15);
+    }
+    .supplement-item:last-child { border-bottom: none; padding-bottom: 0; }
+    .supplement-item:first-child { padding-top: 0; }
+    .supp-name { font-size: 14px; font-weight: 700; margin-bottom: 4px; color: var(--eggshell); }
+    .supp-dosage {
+      font-size: 13px; color: var(--sprout);
+      margin-bottom: 2px;
+    }
+    .supp-timing {
+      font-size: 12px; color: rgba(238, 229, 211, 0.6);
+      font-style: italic; margin-bottom: 4px;
+    }
+    .supp-reason {
+      font-size: 12px;
+      color: var(--wattle);
+      font-weight: 600;
+    }
+
+    /* Food Items */
+    .food-item {
+      display: flex; gap: 8px;
+      padding: 10px 0;
+      border-bottom: 1px solid rgba(238, 229, 211, 0.15);
+      font-size: 14px;
+    }
+    .food-item:last-child { border-bottom: none; padding-bottom: 0; }
+    .food-item:first-child { padding-top: 0; }
+    .food-name { font-weight: 700; white-space: nowrap; color: var(--eggshell); }
+    .food-benefit { color: var(--sprout); }
+    .food-dash { color: rgba(238, 229, 211, 0.4); }
+
+    /* Habit */
+    .habit-text {
+      font-size: 14px; line-height: 1.7;
+      color: var(--eggshell);
+    }
+
+    /* Disclaimer */
+    .disclaimer {
+      font-size: 11px; color: var(--fern);
+      line-height: 1.6;
+      text-align: center;
+      margin: 24px 0;
+      padding: 0 8px;
+      opacity: 0.6;
+    }
+
+    /* Action Buttons */
+    .action-buttons {
+      display: flex; flex-direction: column; gap: 12px;
+      margin-top: 8px;
+    }
+    .copy-btn {
+      width: 100%;
+      padding: 14px 24px;
+      border: 1.5px solid var(--fern);
+      border-radius: 14px;
+      background: transparent;
+      color: var(--fern);
+      font-family: 'Rowdies', cursive;
+      font-size: 15px;
+      font-weight: 400;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+    .copy-btn:hover { background: rgba(78, 106, 62, 0.08); }
+    .copy-btn.copied {
+      border-color: var(--apple-green);
+      color: var(--apple-green);
+    }
+    .start-over-btn {
+      background: none; border: none;
+      color: var(--fern);
+      font-family: 'Nunito', sans-serif;
+      font-size: 13px; font-weight: 600;
+      cursor: pointer;
+      padding: 8px;
+      text-align: center;
+      opacity: 0.6;
+    }
+    .start-over-btn:hover { opacity: 1; }
+
+    /* Animations */
+    @keyframes fadeInUp {
+      from { opacity: 0; transform: translateY(16px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    .result-card { animation: fadeInUp 0.4s ease forwards; }
+    .result-card:nth-child(2) { animation-delay: 0.08s; }
+    .result-card:nth-child(3) { animation-delay: 0.16s; }
+    .result-card:nth-child(4) { animation-delay: 0.24s; }
+
+    /* Scrollbar */
+    ::-webkit-scrollbar { width: 4px; }
+    ::-webkit-scrollbar-track { background: var(--eggshell); }
+    ::-webkit-scrollbar-thumb { background: var(--sprout); border-radius: 4px; }
+  </style>
+</head>
+<body>
+  <div class="app">
+
+    <!-- STEP 1: Selector -->
+    <div id="screen-selector" class="screen active">
+      <div class="step-indicator">
+        <div class="step-dot active"></div>
+        <div class="step-bar"></div>
+        <div class="step-dot"></div>
+        <span>Step 1 of 2</span>
+      </div>
+
+      <div class="header">
+        <h1>Personalize Your Protocol</h1>
+        <p>Select everything that applies to you. We'll build your custom wellness stack.</p>
+      </div>
+
+      <div class="checkbox-group">
+        <div class="section-label">Health Conditions</div>
+        <div class="checkbox-grid" id="conditions-grid"></div>
+      </div>
+
+      <div class="section-divider"></div>
+
+      <div class="checkbox-group">
+        <div class="section-label">What are you currently experiencing?</div>
+        <div class="checkbox-grid" id="symptoms-grid"></div>
+      </div>
+
+      <button class="cta-btn" id="build-btn" disabled>Build My Protocol</button>
+    </div>
+
+    <!-- STEP 2: Results -->
+    <div id="screen-results" class="screen">
+      <div class="step-indicator">
+        <div class="step-dot active"></div>
+        <div class="step-bar"></div>
+        <div class="step-dot active"></div>
+        <span>Step 2 of 2</span>
+      </div>
+
+      <div class="header">
+        <h1>Your Wellness Protocol</h1>
+        <p>Tailored to your unique needs. Use alongside your SkinnyRoti meal plan.</p>
+      </div>
+
+      <div id="results-container"></div>
+
+      <div class="disclaimer">
+        This protocol is designed to complement your SkinnyRoti Meal Plan — not replace it. These recommendations are based on nutritional science and are not medical advice. Always consult your healthcare provider before starting new supplements.
+      </div>
+
+      <div class="action-buttons">
+        <button class="copy-btn" id="copy-btn">Copy My Protocol</button>
+        <button class="start-over-btn" id="start-over-btn">Start Over</button>
+      </div>
+    </div>
+
+  </div>
+
+<script>
+// ── DATA ──
+const CONDITIONS = [
+  "PCOS",
+  "Gut Issues / IBS / Bloating",
+  "Thyroid (Hypo or Hyper)",
+  "Insulin Resistance / Pre-Diabetes",
+  "Hormonal Imbalance",
+  "High Inflammation",
+  "Adrenal Fatigue / Chronic Stress",
+  "Perimenopause / Menopause",
+  "Anemia / Low Iron",
+  "High Cholesterol"
+];
+
+const SYMPTOMS = [
+  "Fatigue / Low Energy",
+  "Bloating / Gas after meals",
+  "Constipation or Irregular digestion",
+  "Hair Loss / Thinning",
+  "Irregular or Painful Periods",
+  "Weight that won't move despite dieting",
+  "Brain Fog",
+  "Poor Sleep",
+  "Mood Swings / Anxiety",
+  "Sugar Cravings",
+  "Skin Issues (acne, dullness, eczema)",
+  "Joint Pain / Inflammation"
+];
+
+const PROTOCOL_DATA = {
+  "PCOS": {
+    supplements: [
+      { name: "Inositol (Myo + D-Chiro)", dosage: "4g/day", timing: "Take with meals, split AM/PM", reason: "Improves insulin sensitivity & ovarian function" },
+      { name: "Magnesium Glycinate", dosage: "300mg", timing: "Take before bed", reason: "Reduces cravings & supports deep sleep" },
+      { name: "Zinc", dosage: "30mg", timing: "Take with food", reason: "Lowers androgens & supports skin health" },
+      { name: "Spearmint Extract", dosage: "500mg or 2 cups tea", timing: "Daily, AM or PM", reason: "Naturally reduces excess androgens" },
+      { name: "Vitamin D3 + K2", dosage: "2000–4000 IU D3 + 100mcg K2", timing: "Take with fat-containing meal", reason: "Supports hormonal balance & calcium absorption" }
+    ],
+    addFoods: [
+      { name: "Flaxseeds", benefit: "balances estrogen naturally" },
+      { name: "Cinnamon", benefit: "supports blood sugar regulation" },
+      { name: "Leafy greens", benefit: "rich in folate & magnesium" },
+      { name: "Pumpkin seeds", benefit: "zinc & omega-3 support" },
+      { name: "Berries", benefit: "low-glycemic antioxidant boost" },
+      { name: "Fatty fish", benefit: "reduces inflammation markers" }
+    ],
+    reduceFoods: [
+      { name: "Refined sugar", reason: "spikes insulin & worsens androgen levels" },
+      { name: "White rice", reason: "high glycemic load triggers insulin response" },
+      { name: "Dairy", reason: "can increase androgens & inflammation" },
+      { name: "Alcohol", reason: "disrupts hormone metabolism" }
+    ],
+    habit: "Start each morning with 1 tbsp apple cider vinegar in warm water before breakfast. This primes your insulin response for the day and supports the blood sugar stability that's critical for managing PCOS symptoms."
+  },
+  "Gut Issues / IBS / Bloating": {
+    supplements: [
+      { name: "Probiotic (Multi-Strain)", dosage: "50 billion CFU", timing: "Take on empty stomach, AM", reason: "Restores gut microbiome diversity" },
+      { name: "L-Glutamine", dosage: "5g", timing: "Take on empty stomach", reason: "Repairs intestinal lining & reduces permeability" },
+      { name: "Digestive Enzymes", dosage: "1 capsule", timing: "Take with each main meal", reason: "Improves nutrient breakdown & reduces bloating" },
+      { name: "Slippery Elm", dosage: "400–500mg", timing: "Take before meals", reason: "Soothes & protects digestive tract lining" },
+      { name: "Magnesium Citrate", dosage: "200–400mg", timing: "Take before bed", reason: "Supports regularity & relaxation" }
+    ],
+    addFoods: [
+      { name: "Bone broth", benefit: "heals gut lining with collagen & amino acids" },
+      { name: "Cooked vegetables", benefit: "easier to digest than raw" },
+      { name: "Ginger", benefit: "reduces nausea & supports motility" },
+      { name: "Kefir", benefit: "natural probiotics for gut health" },
+      { name: "Papaya", benefit: "contains digestive enzymes" },
+      { name: "Fennel", benefit: "relieves bloating & gas naturally" }
+    ],
+    reduceFoods: [
+      { name: "Gluten", reason: "common gut irritant & inflammation trigger" },
+      { name: "Raw cruciferous vegetables", reason: "can cause excess gas & bloating" },
+      { name: "Beans & legumes in excess", reason: "high FODMAP, ferment in gut" },
+      { name: "Alcohol", reason: "damages gut lining & disrupts microbiome" }
+    ],
+    habit: "Chew each bite 20–30 times before swallowing and avoid drinking large amounts of water during meals. This simple shift dramatically improves digestion and reduces bloating by allowing your body's natural enzymes to work properly."
+  },
+  "Thyroid (Hypo or Hyper)": {
+    supplements: [
+      { name: "Selenium", dosage: "200mcg", timing: "Take with food", reason: "Essential for thyroid hormone conversion" },
+      { name: "Zinc", dosage: "30mg", timing: "Take with food", reason: "Supports thyroid hormone production" },
+      { name: "Ashwagandha", dosage: "600mg (KSM-66)", timing: "Take with breakfast", reason: "Balances TSH & supports thyroid function" },
+      { name: "Vitamin D3", dosage: "2000–4000 IU", timing: "Take with fat-containing meal", reason: "Low D3 linked to thyroid dysfunction" },
+      { name: "B-Complex", dosage: "1 capsule", timing: "Take with breakfast", reason: "Supports energy & thyroid metabolism" }
+    ],
+    addFoods: [
+      { name: "Brazil nuts (2–3/day)", benefit: "richest natural source of selenium" },
+      { name: "Seaweed (in moderation)", benefit: "natural iodine for thyroid support" },
+      { name: "Eggs", benefit: "contain iodine, selenium & B12" },
+      { name: "Wild salmon", benefit: "omega-3s reduce thyroid inflammation" },
+      { name: "Pumpkin seeds", benefit: "zinc & magnesium support" },
+      { name: "Coconut oil", benefit: "supports metabolism & energy" }
+    ],
+    reduceFoods: [
+      { name: "Raw goitrogenic veg (raw broccoli, kale, cauliflower)", reason: "can interfere with iodine uptake when raw" },
+      { name: "Soy products", reason: "may interfere with thyroid medication & function" },
+      { name: "Gluten", reason: "linked to thyroid autoimmune triggers" },
+      { name: "Processed foods", reason: "disrupt hormonal balance & metabolism" }
+    ],
+    habit: "If you take thyroid medication, take it on a completely empty stomach 30–60 minutes before eating, and away from coffee or supplements. This ensures maximum absorption and keeps your levels stable throughout the day."
+  },
+  "Insulin Resistance / Pre-Diabetes": {
+    supplements: [
+      { name: "Berberine", dosage: "500mg 3x/day", timing: "Take with each main meal", reason: "Clinically shown to improve insulin sensitivity" },
+      { name: "Chromium Picolinate", dosage: "200–400mcg", timing: "Take with meals", reason: "Enhances insulin receptor activity" },
+      { name: "Alpha Lipoic Acid (ALA)", dosage: "600mg", timing: "Take on empty stomach", reason: "Powerful antioxidant that supports glucose metabolism" },
+      { name: "Magnesium Glycinate", dosage: "300–400mg", timing: "Take before bed", reason: "Improves insulin signaling & sleep quality" },
+      { name: "Cinnamon Extract", dosage: "500mg", timing: "Take with meals", reason: "Mimics insulin & lowers fasting glucose" }
+    ],
+    addFoods: [
+      { name: "Apple cider vinegar", benefit: "lowers post-meal blood sugar spikes" },
+      { name: "Cinnamon", benefit: "natural insulin-mimicking properties" },
+      { name: "Leafy greens", benefit: "low-glycemic, nutrient-dense" },
+      { name: "Chia seeds", benefit: "fiber & omega-3s slow glucose absorption" },
+      { name: "Legumes", benefit: "low GI, high fiber for blood sugar stability" },
+      { name: "Fiber-rich vegetables", benefit: "slows sugar absorption into bloodstream" }
+    ],
+    reduceFoods: [
+      { name: "White bread & refined carbs", reason: "cause rapid blood sugar spikes" },
+      { name: "Sugary drinks & fruit juices", reason: "liquid sugar hits bloodstream fast" },
+      { name: "Alcohol", reason: "disrupts blood sugar regulation overnight" },
+      { name: "Refined carbs & pastries", reason: "high glycemic load worsens resistance" }
+    ],
+    habit: "Always eat your vegetables and protein BEFORE your carbs at every meal. This simple food-sequencing hack can reduce post-meal blood sugar spikes by up to 40%, making a huge difference in insulin management."
+  },
+  "Hormonal Imbalance": {
+    supplements: [
+      { name: "DIM (Diindolylmethane)", dosage: "200mg", timing: "Take with food", reason: "Supports healthy estrogen metabolism" },
+      { name: "Vitex / Chasteberry", dosage: "400mg", timing: "Take in the morning", reason: "Regulates luteinizing hormone & progesterone" },
+      { name: "Vitamin B6", dosage: "50mg", timing: "Take with breakfast", reason: "Supports progesterone production" },
+      { name: "Evening Primrose Oil", dosage: "1000mg", timing: "Take with food", reason: "GLA supports hormonal balance & skin" },
+      { name: "Magnesium Glycinate", dosage: "300mg", timing: "Take before bed", reason: "Calms nervous system & supports hormone clearance" }
+    ],
+    addFoods: [
+      { name: "Flaxseeds (ground)", benefit: "lignans help balance estrogen levels" },
+      { name: "Cruciferous veg (cooked)", benefit: "supports estrogen detoxification" },
+      { name: "Healthy fats (avocado, olive oil)", benefit: "building blocks for hormone production" },
+      { name: "Fermented foods", benefit: "gut health supports hormone clearance" },
+      { name: "Wild-caught salmon", benefit: "omega-3s reduce hormonal inflammation" },
+      { name: "Seeds (pumpkin, sesame, sunflower)", benefit: "seed cycling supports hormone phases" }
+    ],
+    reduceFoods: [
+      { name: "Alcohol", reason: "burdens liver & disrupts estrogen clearance" },
+      { name: "Processed & plastic-wrapped foods", reason: "xenoestrogens mimic & disrupt hormones" },
+      { name: "Excess caffeine", reason: "raises cortisol & stresses adrenals" },
+      { name: "Refined sugar", reason: "spikes insulin which drives hormonal imbalance" }
+    ],
+    habit: "Practice seed cycling: eat 1 tbsp each of ground flax + pumpkin seeds during your follicular phase (days 1–14), and 1 tbsp each of sesame + sunflower seeds during your luteal phase (days 15–28). This naturally supports estrogen and progesterone balance."
+  },
+  "High Inflammation": {
+    supplements: [
+      { name: "Omega-3 Fish Oil (EPA/DHA)", dosage: "2–3g total EPA/DHA", timing: "Take with meals, split doses", reason: "Potent anti-inflammatory, reduces CRP markers" },
+      { name: "Turmeric / Curcumin + Black Pepper", dosage: "500–1000mg curcumin", timing: "Take with fat-containing meal", reason: "Powerful natural anti-inflammatory compound" },
+      { name: "Vitamin C", dosage: "1000mg", timing: "Take with breakfast", reason: "Antioxidant that reduces oxidative stress" },
+      { name: "Quercetin", dosage: "500mg", timing: "Take with meals", reason: "Reduces histamine & inflammatory response" },
+      { name: "Resveratrol", dosage: "250–500mg", timing: "Take with food", reason: "Activates anti-inflammatory pathways" }
+    ],
+    addFoods: [
+      { name: "Fatty fish (salmon, sardines)", benefit: "highest natural source of EPA/DHA" },
+      { name: "Turmeric (with black pepper)", benefit: "curcumin is a powerful anti-inflammatory" },
+      { name: "Ginger", benefit: "reduces inflammatory markers naturally" },
+      { name: "Tart cherries", benefit: "reduce muscle inflammation & improve sleep" },
+      { name: "Extra virgin olive oil", benefit: "oleocanthal acts like natural ibuprofen" },
+      { name: "Blueberries", benefit: "anthocyanins combat oxidative stress" }
+    ],
+    reduceFoods: [
+      { name: "Seed oils (sunflower, canola, soybean)", reason: "high omega-6 drives inflammation" },
+      { name: "Sugar & refined carbs", reason: "trigger inflammatory cytokine release" },
+      { name: "Processed meats", reason: "contain AGEs that fuel inflammation" },
+      { name: "Alcohol", reason: "increases gut permeability & systemic inflammation" }
+    ],
+    habit: "Add an anti-inflammatory golden milk before bed: warm unsweetened almond milk + 1/2 tsp turmeric + pinch of black pepper + dash of cinnamon. This nightly ritual compounds over time to meaningfully reduce chronic inflammation."
+  },
+  "Adrenal Fatigue / Chronic Stress": {
+    supplements: [
+      { name: "Ashwagandha (KSM-66)", dosage: "600mg", timing: "Take with breakfast", reason: "Clinically shown to lower cortisol by 28%" },
+      { name: "Rhodiola Rosea", dosage: "200–400mg", timing: "Take in the morning on empty stomach", reason: "Adaptogen that fights fatigue & stress" },
+      { name: "Vitamin C", dosage: "1000mg", timing: "Take with breakfast", reason: "Adrenals use more vitamin C than any organ" },
+      { name: "B-Complex", dosage: "1 capsule", timing: "Take with breakfast", reason: "Depleted rapidly under chronic stress" },
+      { name: "Magnesium Glycinate", dosage: "300–400mg", timing: "Take before bed", reason: "Calms nervous system & restores deep sleep" }
+    ],
+    addFoods: [
+      { name: "Sweet potato", benefit: "complex carbs support cortisol regulation" },
+      { name: "Avocado", benefit: "healthy fats fuel adrenal hormone production" },
+      { name: "Eggs", benefit: "choline & B vitamins support stress response" },
+      { name: "Dark chocolate (85%+)", benefit: "magnesium & mood-boosting compounds" },
+      { name: "Leafy greens", benefit: "magnesium replenishes depleted stores" },
+      { name: "Whole grains", benefit: "steady energy prevents cortisol spikes" }
+    ],
+    reduceFoods: [
+      { name: "Caffeine (especially after 12pm)", reason: "keeps cortisol elevated & disrupts sleep" },
+      { name: "Alcohol", reason: "disrupts sleep architecture & adrenal recovery" },
+      { name: "Skipping meals", reason: "triggers cortisol spikes & blood sugar crashes" },
+      { name: "Extreme fasting protocols", reason: "adds stress load to already taxed adrenals" }
+    ],
+    habit: "Implement a strict 'caffeine curfew' — no caffeine after 12pm, and limit to 1 cup in the morning, ideally after breakfast (not on an empty stomach). Your adrenals need recovery time, and afternoon caffeine sabotages your cortisol rhythm and sleep quality."
+  },
+  "Perimenopause / Menopause": {
+    supplements: [
+      { name: "Black Cohosh", dosage: "40–80mg", timing: "Take daily with food", reason: "Reduces hot flashes & night sweats" },
+      { name: "Magnesium Glycinate", dosage: "300–400mg", timing: "Take before bed", reason: "Supports sleep, mood & bone health" },
+      { name: "Vitamin D3 + K2", dosage: "2000–4000 IU D3 + 100mcg K2", timing: "Take with fat-containing meal", reason: "Critical for bone density during menopause" },
+      { name: "Omega-3 Fish Oil", dosage: "2g EPA/DHA", timing: "Take with meals", reason: "Supports mood, joints & cardiovascular health" },
+      { name: "Evening Primrose Oil", dosage: "1000mg", timing: "Take with food", reason: "Helps with hot flashes & hormonal skin changes" }
+    ],
+    addFoods: [
+      { name: "Flaxseeds (ground)", benefit: "phytoestrogens ease hormonal transition" },
+      { name: "Edamame & tofu", benefit: "isoflavones support declining estrogen" },
+      { name: "Calcium-rich foods (sardines, greens)", benefit: "protects bone density" },
+      { name: "Fatty fish", benefit: "omega-3s support mood & cardiovascular health" },
+      { name: "Turmeric", benefit: "reduces joint pain & inflammation" },
+      { name: "Collagen-rich foods", benefit: "supports skin elasticity during hormonal shifts" }
+    ],
+    reduceFoods: [
+      { name: "Alcohol", reason: "worsens hot flashes & disrupts sleep" },
+      { name: "Caffeine", reason: "can trigger hot flashes & anxiety" },
+      { name: "Spicy foods", reason: "common hot flash trigger" },
+      { name: "Refined sugar", reason: "worsens mood swings & energy crashes" }
+    ],
+    habit: "Prioritize strength training 3–4x per week, even light resistance work. During perimenopause and menopause, muscle mass declines faster — and building it back directly supports metabolism, bone density, and hormone balance. This is the #1 lever you can pull."
+  },
+  "Anemia / Low Iron": {
+    supplements: [
+      { name: "Iron Bisglycinate", dosage: "25–30mg", timing: "Take on empty stomach with vitamin C", reason: "Gentle, highly absorbable form of iron" },
+      { name: "Vitamin C", dosage: "500–1000mg", timing: "Take alongside iron supplement", reason: "Increases iron absorption by up to 67%" },
+      { name: "B12 (Methylcobalamin)", dosage: "1000mcg", timing: "Take with breakfast", reason: "Supports red blood cell production" },
+      { name: "Folate (Methylfolate)", dosage: "400–800mcg", timing: "Take with breakfast", reason: "Works with B12 for healthy blood cell formation" },
+      { name: "Vitamin D3", dosage: "2000 IU", timing: "Take with fat-containing meal", reason: "Low D3 is linked to chronic anemia" }
+    ],
+    addFoods: [
+      { name: "Red meat (grass-fed, 2–3x/week)", benefit: "most bioavailable source of heme iron" },
+      { name: "Spinach & dark leafy greens", benefit: "rich in non-heme iron & folate" },
+      { name: "Lentils & beans", benefit: "plant-based iron with fiber" },
+      { name: "Pumpkin seeds", benefit: "iron, zinc & magnesium in one" },
+      { name: "Organ meats (liver)", benefit: "extremely rich in iron, B12 & folate" },
+      { name: "Citrus fruits", benefit: "vitamin C pairs with iron for absorption" }
+    ],
+    reduceFoods: [
+      { name: "Coffee & tea with meals", reason: "tannins block iron absorption by up to 60%" },
+      { name: "Calcium supplements with iron-rich meals", reason: "calcium competes with iron absorption" },
+      { name: "Excess dairy at mealtimes", reason: "can inhibit non-heme iron absorption" },
+      { name: "Processed foods", reason: "displace nutrient-dense iron sources" }
+    ],
+    habit: "Separate your coffee/tea from meals by at least 1 hour. Tannins in these drinks dramatically reduce iron absorption. Instead, pair your iron-rich meals with a squeeze of lemon or a side of bell peppers to boost absorption naturally."
+  },
+  "High Cholesterol": {
+    supplements: [
+      { name: "Omega-3 Fish Oil (EPA/DHA)", dosage: "2–3g EPA/DHA", timing: "Take with meals", reason: "Lowers triglycerides & supports HDL" },
+      { name: "Plant Sterols", dosage: "2g/day", timing: "Take with meals", reason: "Blocks cholesterol absorption in the gut" },
+      { name: "Red Yeast Rice", dosage: "1200mg", timing: "Take with dinner", reason: "Contains natural statins that lower LDL" },
+      { name: "CoQ10", dosage: "100–200mg", timing: "Take with fat-containing meal", reason: "Supports heart energy & offsets statin side effects" },
+      { name: "Fiber Supplement (Psyllium)", dosage: "5–10g", timing: "Take before meals with water", reason: "Binds cholesterol in the digestive tract" }
+    ],
+    addFoods: [
+      { name: "Oats & oat bran", benefit: "beta-glucan fiber lowers LDL cholesterol" },
+      { name: "Fatty fish (salmon, mackerel)", benefit: "omega-3s improve cholesterol ratios" },
+      { name: "Nuts (almonds, walnuts)", benefit: "plant sterols & healthy fats lower LDL" },
+      { name: "Avocado", benefit: "monounsaturated fats raise HDL" },
+      { name: "Beans & legumes", benefit: "soluble fiber binds & removes cholesterol" },
+      { name: "Extra virgin olive oil", benefit: "polyphenols protect against LDL oxidation" }
+    ],
+    reduceFoods: [
+      { name: "Trans fats & hydrogenated oils", reason: "directly raise LDL & lower HDL" },
+      { name: "Processed meats", reason: "saturated fat & sodium worsen cholesterol" },
+      { name: "Fried foods", reason: "oxidized oils increase LDL particle damage" },
+      { name: "Excess refined carbs", reason: "raise triglycerides & small dense LDL" }
+    ],
+    habit: "Start each day with a bowl of oats or add 2 tbsp of oat bran to your morning meal. The beta-glucan fiber in oats is one of the most proven natural ways to lower LDL cholesterol — studies show 5–10% reduction with consistent daily intake."
+  }
+};
+
+// Symptom → condition mapping for boosting relevance
+const SYMPTOM_CONDITION_MAP = {
+  "Fatigue / Low Energy": ["Adrenal Fatigue / Chronic Stress", "Thyroid (Hypo or Hyper)", "Anemia / Low Iron"],
+  "Bloating / Gas after meals": ["Gut Issues / IBS / Bloating"],
+  "Constipation or Irregular digestion": ["Gut Issues / IBS / Bloating", "Thyroid (Hypo or Hyper)"],
+  "Hair Loss / Thinning": ["Thyroid (Hypo or Hyper)", "PCOS", "Anemia / Low Iron"],
+  "Irregular or Painful Periods": ["PCOS", "Hormonal Imbalance"],
+  "Weight that won't move despite dieting": ["Insulin Resistance / Pre-Diabetes", "Thyroid (Hypo or Hyper)", "PCOS"],
+  "Brain Fog": ["Thyroid (Hypo or Hyper)", "Adrenal Fatigue / Chronic Stress", "Gut Issues / IBS / Bloating"],
+  "Poor Sleep": ["Adrenal Fatigue / Chronic Stress", "Perimenopause / Menopause"],
+  "Mood Swings / Anxiety": ["Hormonal Imbalance", "Perimenopause / Menopause", "Adrenal Fatigue / Chronic Stress"],
+  "Sugar Cravings": ["Insulin Resistance / Pre-Diabetes", "Adrenal Fatigue / Chronic Stress"],
+  "Skin Issues (acne, dullness, eczema)": ["PCOS", "Gut Issues / IBS / Bloating", "Hormonal Imbalance"],
+  "Joint Pain / Inflammation": ["High Inflammation"]
+};
+
+// ── STATE ──
+const selectedConditions = new Set();
+const selectedSymptoms = new Set();
+
+// ── LOCALSTORAGE ──
+const LS_STATE_KEY = 'wellness-protocol-state';
+const LS_RESULTS_KEY = 'wellness-protocol-results';
+
+function saveState() {
+  const state = {
+    conditions: Array.from(selectedConditions),
+    symptoms: Array.from(selectedSymptoms)
+  };
+  try { localStorage.setItem(LS_STATE_KEY, JSON.stringify(state)); } catch(e) {}
+}
+
+function loadState() {
+  try {
+    const raw = localStorage.getItem(LS_STATE_KEY);
+    if (raw) return JSON.parse(raw);
+  } catch(e) {}
+  return null;
+}
+
+function saveResults(protocol) {
+  try { localStorage.setItem(LS_RESULTS_KEY, JSON.stringify(protocol)); } catch(e) {}
+}
+
+function loadResults() {
+  try {
+    const raw = localStorage.getItem(LS_RESULTS_KEY);
+    if (raw) return JSON.parse(raw);
+  } catch(e) {}
+  return null;
+}
+
+function clearStorage() {
+  try {
+    localStorage.removeItem(LS_STATE_KEY);
+    localStorage.removeItem(LS_RESULTS_KEY);
+  } catch(e) {}
+}
+
+// ── RENDER CHECKBOXES ──
+function renderCheckboxes(items, containerId, selectedSet) {
+  const container = document.getElementById(containerId);
+  items.forEach(item => {
+    const el = document.createElement('div');
+    el.className = 'checkbox-item';
+    el.dataset.value = item;
+    if (selectedSet.has(item)) el.classList.add('selected');
+    el.innerHTML = `
+      <div class="check-box"><span class="check-icon">✓</span></div>
+      <span class="checkbox-label">${item}</span>
+    `;
+    el.addEventListener('click', () => {
+      if (selectedSet.has(item)) {
+        selectedSet.delete(item);
+        el.classList.remove('selected');
+      } else {
+        selectedSet.add(item);
+        el.classList.add('selected');
+      }
+      updateBuildButton();
+      saveState();
+    });
+    container.appendChild(el);
+  });
+}
+
+function updateBuildButton() {
+  const btn = document.getElementById('build-btn');
+  btn.disabled = selectedConditions.size === 0 && selectedSymptoms.size === 0;
+}
+
+// ── PROTOCOL GENERATION ──
+function buildProtocol() {
+  // Determine effective conditions: selected conditions + symptom-implied conditions
+  const effectiveConditions = new Set(selectedConditions);
+  selectedSymptoms.forEach(symptom => {
+    const mapped = SYMPTOM_CONDITION_MAP[symptom];
+    if (mapped) {
+      // Only add symptom-implied conditions if they reinforce (add top match)
+      if (effectiveConditions.size === 0) {
+        effectiveConditions.add(mapped[0]);
+      }
+    }
+  });
+
+  // If still nothing, use symptom mappings more aggressively
+  if (effectiveConditions.size === 0) {
+    const conditionScores = {};
+    selectedSymptoms.forEach(symptom => {
+      const mapped = SYMPTOM_CONDITION_MAP[symptom];
+      if (mapped) {
+        mapped.forEach((c, i) => {
+          conditionScores[c] = (conditionScores[c] || 0) + (mapped.length - i);
+        });
+      }
+    });
+    const sorted = Object.entries(conditionScores).sort((a, b) => b[1] - a[1]);
+    sorted.slice(0, 2).forEach(([c]) => effectiveConditions.add(c));
+  }
+
+  // Collect all data
+  const allSupplements = [];
+  const allAddFoods = [];
+  const allReduceFoods = [];
+  const habits = [];
+  const seenSuppNames = new Set();
+  const seenAddFoodNames = new Set();
+  const seenReduceFoodNames = new Set();
+
+  effectiveConditions.forEach(condition => {
+    const data = PROTOCOL_DATA[condition];
+    if (!data) return;
+
+    data.supplements.forEach(s => {
+      const key = s.name.split('(')[0].trim().toLowerCase();
+      if (!seenSuppNames.has(key)) {
+        seenSuppNames.add(key);
+        allSupplements.push(s);
+      }
+    });
+
+    data.addFoods.forEach(f => {
+      const key = f.name.split('(')[0].trim().toLowerCase();
+      if (!seenAddFoodNames.has(key)) {
+        seenAddFoodNames.add(key);
+        allAddFoods.push(f);
+      }
+    });
+
+    data.reduceFoods.forEach(f => {
+      const key = f.name.split('(')[0].trim().toLowerCase();
+      if (!seenReduceFoodNames.has(key)) {
+        seenReduceFoodNames.add(key);
+        allReduceFoods.push(f);
+      }
+    });
+
+    habits.push(data.habit);
+  });
+
+  // Cap outputs
+  const supplements = allSupplements.slice(0, 6);
+  const addFoods = allAddFoods.slice(0, 8);
+  const reduceFoods = allReduceFoods.slice(0, 5);
+  const habit = habits[0] || "Focus on consistency over perfection. Pick one small habit from this protocol and do it daily for 2 weeks before adding more. Sustainable change beats dramatic overhauls every time.";
+
+  return { supplements, addFoods, reduceFoods, habit };
+}
+
+// ── RENDER RESULTS ──
+function renderResults(protocol) {
+  const container = document.getElementById('results-container');
+
+  // Supplements card
+  let suppHTML = `<div class="result-card">
+    <div class="result-card-header">
+      <span class="icon">💊</span>
+      <h3>Your Supplement Stack</h3>
+    </div>`;
+  protocol.supplements.forEach(s => {
+    suppHTML += `<div class="supplement-item">
+      <div class="supp-name">${s.name}</div>
+      <div class="supp-dosage">${s.dosage}</div>
+      <div class="supp-timing">${s.timing}</div>
+      <div class="supp-reason">${s.reason}</div>
+    </div>`;
+  });
+  suppHTML += `</div>`;
+
+  // Add Foods card
+  let addHTML = `<div class="result-card">
+    <div class="result-card-header">
+      <span class="icon">🥗</span>
+      <h3>Priority Foods to Add</h3>
+    </div>`;
+  protocol.addFoods.forEach(f => {
+    addHTML += `<div class="food-item">
+      <span class="food-name">${f.name}</span>
+      <span class="food-dash">—</span>
+      <span class="food-benefit">${f.benefit}</span>
+    </div>`;
+  });
+  addHTML += `</div>`;
+
+  // Reduce Foods card
+  let reduceHTML = `<div class="result-card">
+    <div class="result-card-header">
+      <span class="icon">🚫</span>
+      <h3>Foods to Reduce</h3>
+    </div>`;
+  protocol.reduceFoods.forEach(f => {
+    reduceHTML += `<div class="food-item">
+      <span class="food-name">${f.name}</span>
+      <span class="food-dash">—</span>
+      <span class="food-benefit">${f.reason}</span>
+    </div>`;
+  });
+  reduceHTML += `</div>`;
+
+  // Habit card
+  let habitHTML = `<div class="result-card">
+    <div class="result-card-header">
+      <span class="icon">⚡</span>
+      <h3>Your Top Habit Focus</h3>
+    </div>
+    <p class="habit-text">${protocol.habit}</p>
+  </div>`;
+
+  container.innerHTML = suppHTML + addHTML + reduceHTML + habitHTML;
+}
+
+// ── COPY TO CLIPBOARD ──
+function generatePlainText(protocol) {
+  let text = "YOUR WELLNESS PROTOCOL\nby SkinnyRoti Metabolic Reset\n";
+  text += "━━━━━━━━━━━━━━━━━━━━━━━━\n\n";
+
+  text += "💊 SUPPLEMENT STACK\n";
+  protocol.supplements.forEach(s => {
+    text += `• ${s.name} — ${s.dosage}\n  ${s.timing}\n  ${s.reason}\n\n`;
+  });
+
+  text += "🥗 PRIORITY FOODS TO ADD\n";
+  protocol.addFoods.forEach(f => {
+    text += `• ${f.name} — ${f.benefit}\n`;
+  });
+
+  text += "\n🚫 FOODS TO REDUCE\n";
+  protocol.reduceFoods.forEach(f => {
+    text += `• ${f.name} — ${f.reason}\n`;
+  });
+
+  text += `\n⚡ TOP HABIT FOCUS\n${protocol.habit}\n`;
+  text += "\n━━━━━━━━━━━━━━━━━━━━━━━━\n";
+  text += "This protocol complements your SkinnyRoti Meal Plan — not replaces it.\nAlways consult your healthcare provider before starting new supplements.";
+
+  return text;
+}
+
+// ── SHOW RESULTS SCREEN ──
+function showResults(protocol) {
+  renderResults(protocol);
+  document.getElementById('screen-selector').classList.remove('active');
+  document.getElementById('screen-results').classList.add('active');
+  window._currentProtocol = protocol;
+}
+
+// ── EVENT LISTENERS ──
+document.getElementById('build-btn').addEventListener('click', () => {
+  const protocol = buildProtocol();
+  showResults(protocol);
+  saveResults(protocol);
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+});
+
+document.getElementById('copy-btn').addEventListener('click', () => {
+  const text = generatePlainText(window._currentProtocol);
+  navigator.clipboard.writeText(text).then(() => {
+    const btn = document.getElementById('copy-btn');
+    btn.textContent = 'Copied!';
+    btn.classList.add('copied');
+    setTimeout(() => {
+      btn.textContent = 'Copy My Protocol';
+      btn.classList.remove('copied');
+    }, 2000);
+  });
+});
+
+document.getElementById('start-over-btn').addEventListener('click', () => {
+  selectedConditions.clear();
+  selectedSymptoms.clear();
+  document.querySelectorAll('.checkbox-item').forEach(el => el.classList.remove('selected'));
+  document.getElementById('screen-results').classList.remove('active');
+  document.getElementById('screen-selector').classList.add('active');
+  document.getElementById('results-container').innerHTML = '';
+  updateBuildButton();
+  clearStorage();
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+});
+
+// ── INIT ──
+// Restore saved selections before rendering checkboxes
+const savedState = loadState();
+if (savedState) {
+  (savedState.conditions || []).forEach(c => selectedConditions.add(c));
+  (savedState.symptoms || []).forEach(s => selectedSymptoms.add(s));
+}
+
+renderCheckboxes(CONDITIONS, 'conditions-grid', selectedConditions);
+renderCheckboxes(SYMPTOMS, 'symptoms-grid', selectedSymptoms);
+updateBuildButton();
+
+// Restore saved results if they exist
+const savedResults = loadResults();
+if (savedResults && savedResults.supplements && savedResults.supplements.length > 0) {
+  showResults(savedResults);
+}
+</script>
+</body>
+</html>
