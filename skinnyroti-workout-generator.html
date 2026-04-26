@@ -1,0 +1,931 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SkinnyRoti Workout Generator</title>
+  <style>
+    :root {
+      --eggshell: #EEE5D3;
+      --fern: #4E6A3E;
+      --red: #D64A32;
+      --evergreen: #074B29;
+      --smoke: #F2F8EE;
+      --fern-muted: rgba(78, 106, 62, 0.5);
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { background: var(--eggshell); font-family: Georgia, serif; color: var(--fern); min-height: 100vh; }
+
+    header { background: var(--evergreen); padding: 24px; text-align: center; }
+    .brand { color: var(--eggshell); font-size: 11px; letter-spacing: 4px; text-transform: uppercase; margin-bottom: 6px; opacity: 0.7; }
+    header h1 { color: var(--eggshell); font-size: 26px; font-weight: normal; }
+
+    .container { max-width: 620px; margin: 0 auto; padding: 36px 20px 60px; }
+
+    .step-label { font-size: 11px; letter-spacing: 3px; text-transform: uppercase; color: var(--fern-muted); margin-bottom: 10px; }
+    .step-title { font-size: 19px; color: var(--fern); margin-bottom: 20px; }
+
+    /* Time buttons */
+    .time-grid { display: flex; flex-wrap: wrap; gap: 10px; margin-bottom: 40px; }
+    .time-btn {
+      padding: 10px 20px; border: 1.5px solid var(--fern); background: transparent;
+      color: var(--fern); border-radius: 100px; font-size: 14px; cursor: pointer;
+      transition: all 0.2s; font-family: inherit;
+    }
+    .time-btn:hover, .time-btn.active { background: var(--fern); color: var(--eggshell); }
+
+    /* Location cards */
+    .location-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 40px; }
+    .location-card {
+      background: var(--smoke); border: 1.5px solid transparent;
+      border-radius: 14px; padding: 20px 16px; cursor: pointer; transition: all 0.2s;
+    }
+    .location-card:hover { border-color: var(--fern); }
+    .location-card.active { border-color: var(--red); }
+    .location-icon { font-size: 30px; margin-bottom: 10px; }
+    .location-name { font-size: 15px; color: var(--fern); margin-bottom: 4px; font-weight: bold; }
+    .location-desc { font-size: 12px; color: var(--fern-muted); }
+
+    /* Generate button */
+    .generate-btn {
+      width: 100%; padding: 17px; background: var(--red); color: var(--eggshell);
+      border: none; border-radius: 12px; font-size: 16px; font-family: inherit;
+      cursor: pointer; transition: opacity 0.2s; letter-spacing: 0.5px;
+    }
+    .generate-btn:disabled { opacity: 0.38; cursor: not-allowed; }
+    .generate-btn:not(:disabled):hover { opacity: 0.88; }
+
+    /* Workout card */
+    .workout-card { background: var(--smoke); border-radius: 18px; padding: 28px 24px; margin-top: 36px; display: none; }
+    .workout-card.visible { display: block; }
+
+    .workout-header { border-bottom: 1px solid rgba(78,106,62,0.15); padding-bottom: 18px; margin-bottom: 4px; }
+    .workout-badge { font-size: 11px; letter-spacing: 3px; text-transform: uppercase; color: var(--red); margin-bottom: 8px; }
+    .workout-title { font-size: 23px; color: var(--fern); margin-bottom: 5px; }
+    .workout-meta { font-size: 13px; color: var(--fern-muted); }
+
+    .section-label {
+      font-size: 10px; letter-spacing: 3px; text-transform: uppercase;
+      color: var(--fern-muted); margin-top: 22px; margin-bottom: 6px;
+    }
+
+    .exercise-row {
+      display: flex; align-items: center; padding: 14px 0;
+      border-bottom: 1px solid rgba(78,106,62,0.09); gap: 14px;
+    }
+    .exercise-number { font-size: 19px; color: var(--red); font-weight: bold; min-width: 26px; line-height: 1; }
+    .exercise-info { flex: 1; }
+    .exercise-name { font-size: 15px; color: var(--fern); margin-bottom: 3px; }
+    .exercise-detail { font-size: 12px; color: var(--fern-muted); }
+    .exercise-badge {
+      background: var(--eggshell); color: var(--fern); border-radius: 100px;
+      padding: 4px 13px; font-size: 12px; white-space: nowrap;
+    }
+
+    .workout-tip {
+      background: var(--evergreen); color: var(--eggshell);
+      border-radius: 12px; padding: 16px 20px; margin-top: 26px;
+      font-size: 14px; line-height: 1.65;
+    }
+    .workout-tip strong { display: block; font-size: 10px; letter-spacing: 2px; text-transform: uppercase; margin-bottom: 7px; opacity: 0.65; }
+
+    .regen-btn {
+      width: 100%; padding: 14px; background: transparent; color: var(--fern);
+      border: 1.5px solid var(--fern); border-radius: 12px; font-size: 14px;
+      font-family: inherit; cursor: pointer; margin-top: 16px; transition: all 0.2s;
+    }
+    .regen-btn:hover { background: var(--fern); color: var(--eggshell); }
+
+    footer { background: var(--evergreen); text-align: center; padding: 22px; color: var(--eggshell); font-size: 12px; opacity: 0.75; margin-top: 20px; }
+
+    @media (max-width: 480px) {
+      .location-grid { grid-template-columns: 1fr 1fr; }
+      header h1 { font-size: 22px; }
+    }
+  </style>
+</head>
+<body>
+
+<header>
+  <div class="brand">Skinnyroti · Metabolic Reset Program</div>
+  <h1>Workout Generator</h1>
+</header>
+
+<div class="container">
+
+  <p class="step-label">Step 1</p>
+  <p class="step-title">How much time do you have today?</p>
+  <div class="time-grid">
+    <button class="time-btn" data-time="5">5 min</button>
+    <button class="time-btn" data-time="10">10 min</button>
+    <button class="time-btn" data-time="15">15 min</button>
+    <button class="time-btn" data-time="20">20 min</button>
+    <button class="time-btn" data-time="30">30 min</button>
+    <button class="time-btn" data-time="45">45 min</button>
+    <button class="time-btn" data-time="60">60 min</button>
+  </div>
+
+  <p class="step-label">Step 2</p>
+  <p class="step-title">Where are you right now?</p>
+  <div class="location-grid">
+    <div class="location-card" data-location="gym">
+      <div class="location-icon">🏋️</div>
+      <div class="location-name">Commercial Gym</div>
+      <div class="location-desc">Weights, machines, cables</div>
+    </div>
+    <div class="location-card" data-location="home">
+      <div class="location-icon">🏠</div>
+      <div class="location-name">Home / Garage</div>
+      <div class="location-desc">Dumbbells, mat, bands</div>
+    </div>
+    <div class="location-card" data-location="outside">
+      <div class="location-icon">🌿</div>
+      <div class="location-name">Outside / Track</div>
+      <div class="location-desc">Open space, no equipment</div>
+    </div>
+    <div class="location-card" data-location="anywhere">
+      <div class="location-icon">📍</div>
+      <div class="location-name">Anywhere</div>
+      <div class="location-desc">Parking lot, hotel, small space</div>
+    </div>
+  </div>
+
+  <button class="generate-btn" id="generateBtn" disabled>Select time + location to get started</button>
+
+  <div class="workout-card" id="workoutCard">
+    <div class="workout-header">
+      <div class="workout-badge" id="workoutBadge"></div>
+      <div class="workout-title" id="workoutTitle"></div>
+      <div class="workout-meta" id="workoutMeta"></div>
+    </div>
+    <div id="workoutContent"></div>
+    <div class="workout-tip" id="workoutTip"></div>
+    <button class="regen-btn" id="regenBtn">↻ Give me a different workout</button>
+  </div>
+
+</div>
+
+<footer>SkinnyRoti · Metabolic Reset Program</footer>
+
+<script>
+const workoutData = {
+  gym: {
+    5: [
+      {
+        title: "5-Minute Strength Igniter",
+        description: "Heavy compound lifts — 3 rounds, max effort",
+        sections: [
+          { label: "Circuit — 3 rounds, 20s rest between rounds", exercises: [
+            { name: "Barbell Back Squat", detail: "5 reps, heavy", badge: "×3 rounds" },
+            { name: "Barbell Romanian Deadlift", detail: "5 reps", badge: "×3 rounds" }
+          ]}
+        ],
+        tip: "Keep the weight heavy. This is about quality reps in minimal time — move fast between exercises and don't touch your phone."
+      },
+      {
+        title: "Express Push-Pull Superset",
+        description: "Upper body superset — 3 rounds",
+        sections: [
+          { label: "Superset — no rest between A+B, 20s after each round", exercises: [
+            { name: "Dumbbell Bench Press", detail: "10 reps", badge: "A" },
+            { name: "Cable Row", detail: "10 reps", badge: "B" },
+            { name: "Overhead Press", detail: "10 reps", badge: "A" },
+            { name: "Lat Pulldown", detail: "10 reps", badge: "B" }
+          ]}
+        ],
+        tip: "Superset opposite muscle groups so one rests while the other works — you get double the volume in half the time."
+      }
+    ],
+    10: [
+      {
+        title: "10-Minute Total Body Blitz",
+        description: "4 compound movements — 2 rounds",
+        sections: [
+          { label: "2 rounds — 30s rest between rounds", exercises: [
+            { name: "Leg Press", detail: "12 reps", badge: "×2" },
+            { name: "Seated Cable Row", detail: "12 reps", badge: "×2" },
+            { name: "Dumbbell Shoulder Press", detail: "10 reps", badge: "×2" },
+            { name: "Cable Tricep Pushdown", detail: "12 reps", badge: "×2" }
+          ]}
+        ],
+        tip: "Pre-set all your weights before starting. Zero downtime between exercises — every second counts."
+      },
+      {
+        title: "10-Minute Lower Body Express",
+        description: "Glutes and quads — 3 rounds",
+        sections: [
+          { label: "3 rounds — 30s rest between rounds", exercises: [
+            { name: "Goblet Squat", detail: "12 reps", badge: "×3" },
+            { name: "Hip Thrust (barbell or Smith)", detail: "12 reps", badge: "×3" },
+            { name: "Leg Curl", detail: "12 reps", badge: "×3" }
+          ]}
+        ],
+        tip: "Drive through your heels on the hip thrust and squeeze at the top for 1 second. That's where the glute activation happens."
+      }
+    ],
+    15: [
+      {
+        title: "15-Minute Push Day Express",
+        description: "Chest, shoulders, triceps — 3 rounds",
+        sections: [
+          { label: "3 rounds — 30s rest between rounds", exercises: [
+            { name: "Barbell Bench Press", detail: "8 reps", badge: "×3" },
+            { name: "Dumbbell Lateral Raise", detail: "12 reps", badge: "×3" },
+            { name: "Incline Dumbbell Press", detail: "10 reps", badge: "×3" },
+            { name: "Tricep Pushdown", detail: "12 reps", badge: "×3" }
+          ]}
+        ],
+        tip: "Move station to station efficiently. Pre-load your weights before starting so there's literally zero downtime between exercises."
+      },
+      {
+        title: "15-Minute Pull Day Express",
+        description: "Back and biceps — 3 rounds",
+        sections: [
+          { label: "3 rounds — 30s rest between rounds", exercises: [
+            { name: "Lat Pulldown", detail: "10 reps", badge: "×3" },
+            { name: "Seated Cable Row", detail: "10 reps", badge: "×3" },
+            { name: "Face Pull", detail: "15 reps", badge: "×3" },
+            { name: "Dumbbell Curl", detail: "12 reps", badge: "×3" }
+          ]}
+        ],
+        tip: "Focus on the mind-muscle connection on every pull. Squeeze at the top, control on the way down — tempo matters more than weight."
+      }
+    ],
+    20: [
+      {
+        title: "20-Minute Lower Body Burn",
+        description: "Glutes, quads, hamstrings — 3 rounds",
+        sections: [
+          { label: "Warm-up (2 min)", exercises: [
+            { name: "Hip circles + leg swings", detail: "1 min each side", badge: "warm-up" }
+          ]},
+          { label: "Main circuit — 3 rounds, 40s rest", exercises: [
+            { name: "Barbell Back Squat", detail: "10 reps", badge: "×3" },
+            { name: "Romanian Deadlift", detail: "10 reps", badge: "×3" },
+            { name: "Hip Thrust (barbell)", detail: "12 reps", badge: "×3" },
+            { name: "Walking Lunges", detail: "10 each leg", badge: "×3" }
+          ]}
+        ],
+        tip: "Drive through your heels on squats and hip thrusts. These are the money moves for glute development — treat them like they matter."
+      },
+      {
+        title: "20-Minute Upper Body Superset",
+        description: "Push and pull balanced — 4 supersets",
+        sections: [
+          { label: "Warm-up (2 min)", exercises: [
+            { name: "Band pull-aparts + shoulder circles", detail: "2 min", badge: "warm-up" }
+          ]},
+          { label: "4 supersets — no rest between A+B, 30s after pair", exercises: [
+            { name: "Bench Press", detail: "10 reps", badge: "A" },
+            { name: "Lat Pulldown", detail: "10 reps", badge: "B" },
+            { name: "Overhead Press", detail: "10 reps", badge: "A" },
+            { name: "Cable Row", detail: "10 reps", badge: "B" }
+          ]}
+        ],
+        tip: "Paired supersets of push and pull is one of the most efficient training methods. Neither muscle group fully fatigues between sets."
+      }
+    ],
+    30: [
+      {
+        title: "30-Minute Full Body Strength",
+        description: "Push, pull, hinge, squat — all bases covered",
+        sections: [
+          { label: "Warm-up (3 min)", exercises: [
+            { name: "Treadmill walk or bike", detail: "90s", badge: "warm-up" },
+            { name: "Arm circles + hip hinges", detail: "90s", badge: "warm-up" }
+          ]},
+          { label: "Block A — 3 sets, 45s rest", exercises: [
+            { name: "Barbell Squat", detail: "3×8", badge: "compound" },
+            { name: "Bent-Over Barbell Row", detail: "3×8", badge: "compound" }
+          ]},
+          { label: "Block B — 3 sets, 45s rest", exercises: [
+            { name: "Dumbbell Bench Press", detail: "3×10", badge: "compound" },
+            { name: "Romanian Deadlift", detail: "3×10", badge: "compound" }
+          ]},
+          { label: "Finisher — 2 rounds", exercises: [
+            { name: "Dumbbell Lateral Raise", detail: "15 reps", badge: "finisher" },
+            { name: "Plank Hold", detail: "45 seconds", badge: "finisher" }
+          ]}
+        ],
+        tip: "Rest exactly 45 seconds — use your phone timer. Disciplined rest periods are what separate a real workout from just being in the gym."
+      }
+    ],
+    45: [
+      {
+        title: "45-Minute Upper Body Hypertrophy",
+        description: "Chest, back, shoulders, arms — full upper split",
+        sections: [
+          { label: "Warm-up (5 min)", exercises: [
+            { name: "Band pull-aparts", detail: "20 reps × 2 sets", badge: "warm-up" },
+            { name: "Light dumbbell shoulder warm-up", detail: "90s", badge: "warm-up" }
+          ]},
+          { label: "Chest & Back superset — 4 sets", exercises: [
+            { name: "Barbell Bench Press", detail: "4×8", badge: "A" },
+            { name: "Lat Pulldown", detail: "4×10", badge: "B" }
+          ]},
+          { label: "Shoulders & Rows superset — 3 sets", exercises: [
+            { name: "Overhead Dumbbell Press", detail: "3×10", badge: "A" },
+            { name: "Seated Cable Row", detail: "3×12", badge: "B" }
+          ]},
+          { label: "Arms — 3 sets each", exercises: [
+            { name: "EZ Bar Curl", detail: "3×12", badge: "biceps" },
+            { name: "Tricep Overhead Extension", detail: "3×12", badge: "triceps" }
+          ]},
+          { label: "Core finisher", exercises: [
+            { name: "Cable Crunch", detail: "3×15", badge: "core" },
+            { name: "Plank", detail: "3×45s", badge: "core" }
+          ]}
+        ],
+        tip: "Get your protein in within 30 minutes of finishing. Your muscles are primed to absorb nutrients right after training — don't waste that window."
+      }
+    ],
+    60: [
+      {
+        title: "60-Minute Full Body Power Session",
+        description: "Strength + hypertrophy + cardio finisher",
+        sections: [
+          { label: "Warm-up (8 min)", exercises: [
+            { name: "Treadmill incline walk", detail: "4 min", badge: "warm-up" },
+            { name: "Hip hinges + shoulder warm-up", detail: "4 min", badge: "warm-up" }
+          ]},
+          { label: "Power block — 4 sets, 60s rest", exercises: [
+            { name: "Barbell Back Squat", detail: "4×6 (heavy)", badge: "strength" },
+            { name: "Barbell Deadlift", detail: "4×5 (heavy)", badge: "strength" }
+          ]},
+          { label: "Hypertrophy block — 3 sets, 45s rest", exercises: [
+            { name: "Incline Dumbbell Press", detail: "3×12", badge: "hypertrophy" },
+            { name: "Seated Cable Row", detail: "3×12", badge: "hypertrophy" },
+            { name: "Leg Press", detail: "3×15", badge: "hypertrophy" },
+            { name: "Dumbbell Lateral Raise", detail: "3×15", badge: "hypertrophy" }
+          ]},
+          { label: "Cardio finisher (8 min)", exercises: [
+            { name: "Rowing machine or treadmill", detail: "8 min steady", badge: "cardio" }
+          ]},
+          { label: "Cool-down (5 min)", exercises: [
+            { name: "Hip flexor stretch", detail: "60s each side", badge: "stretch" },
+            { name: "Chest doorway stretch", detail: "60s", badge: "stretch" },
+            { name: "Child's pose", detail: "60s", badge: "stretch" }
+          ]}
+        ],
+        tip: "Log what you lifted today. Writing down your weights is the single biggest driver of long-term results — you can't improve what you don't track."
+      }
+    ]
+  },
+
+  home: {
+    5: [
+      {
+        title: "5-Minute Home Fire Starter",
+        description: "No equipment — max intensity AMRAP",
+        sections: [
+          { label: "AMRAP — as many rounds as possible in 5 minutes", exercises: [
+            { name: "Squat Jumps", detail: "10 reps", badge: "AMRAP" },
+            { name: "Push-ups", detail: "10 reps", badge: "AMRAP" },
+            { name: "Mountain Climbers", detail: "20 reps", badge: "AMRAP" }
+          ]}
+        ],
+        tip: "AMRAP means go until the clock hits zero. Count your rounds — next time, beat that number."
+      },
+      {
+        title: "5-Minute Glute Activator",
+        description: "Wake up the glutes before the day starts",
+        sections: [
+          { label: "2 rounds — no rest between exercises", exercises: [
+            { name: "Glute Bridge", detail: "20 reps", badge: "×2" },
+            { name: "Donkey Kicks", detail: "15 each leg", badge: "×2" },
+            { name: "Squat Pulses", detail: "20 reps", badge: "×2" }
+          ]}
+        ],
+        tip: "Do this first thing in the morning. Activating your glutes before you sit down for the day is one of the best things you can do for your body."
+      }
+    ],
+    10: [
+      {
+        title: "10-Minute Dumbbell Full Body",
+        description: "3 compound moves — 3 rounds",
+        sections: [
+          { label: "3 rounds — 30s rest between rounds", exercises: [
+            { name: "Dumbbell Goblet Squat", detail: "12 reps", badge: "×3" },
+            { name: "Dumbbell Bent-Over Row", detail: "10 each arm", badge: "×3" },
+            { name: "Dumbbell Push Press", detail: "10 reps", badge: "×3" }
+          ]}
+        ],
+        tip: "One dumbbell is enough. Go heavier than you think — the discomfort is the workout working."
+      }
+    ],
+    15: [
+      {
+        title: "15-Minute Home Strength Circuit",
+        description: "Dumbbells + bodyweight — 4 rounds",
+        sections: [
+          { label: "4 rounds — 30s rest between rounds", exercises: [
+            { name: "Dumbbell Sumo Squat", detail: "12 reps", badge: "×4" },
+            { name: "Dumbbell Romanian Deadlift", detail: "10 reps", badge: "×4" },
+            { name: "Push-ups", detail: "12 reps", badge: "×4" },
+            { name: "Dumbbell Shoulder Press", detail: "10 reps", badge: "×4" }
+          ]}
+        ],
+        tip: "Can't do full push-ups? Do them from your knees. Half-reps done consistently beat zero reps every single time."
+      },
+      {
+        title: "15-Minute Glute & Leg Burner",
+        description: "Lower body focus — no gym needed",
+        sections: [
+          { label: "Warm-up (2 min)", exercises: [
+            { name: "Hip circles + glute bridges", detail: "2 min", badge: "warm-up" }
+          ]},
+          { label: "3 rounds — 30s rest between rounds", exercises: [
+            { name: "Reverse Lunge", detail: "12 each leg", badge: "×3" },
+            { name: "Glute Bridge (hold 2s at top)", detail: "15 reps", badge: "×3" },
+            { name: "Squat Jumps", detail: "15 reps", badge: "×3" },
+            { name: "Curtsy Lunge", detail: "10 each leg", badge: "×3" }
+          ]}
+        ],
+        tip: "The 2-second hold at the top of your glute bridge is where the magic happens. Don't skip it."
+      }
+    ],
+    20: [
+      {
+        title: "20-Minute Home Glute & Core",
+        description: "Your body is the machine",
+        sections: [
+          { label: "Warm-up (2 min)", exercises: [
+            { name: "Hip circles + bodyweight squats", detail: "2 min", badge: "warm-up" }
+          ]},
+          { label: "3 rounds — 40s rest between rounds", exercises: [
+            { name: "Hip Thrust (with dumbbell or bodyweight)", detail: "15 reps", badge: "×3" },
+            { name: "Reverse Lunge", detail: "10 each leg", badge: "×3" },
+            { name: "Single-Leg Deadlift", detail: "8 each leg", badge: "×3" },
+            { name: "Plank Hip Dips", detail: "20 reps", badge: "×3" }
+          ]}
+        ],
+        tip: "Put a dumbbell or heavy book across your hips on floor hip thrusts — even a small amount of resistance makes a massive difference."
+      }
+    ],
+    30: [
+      {
+        title: "30-Minute Home Full Body",
+        description: "Strength + cardio — complete session",
+        sections: [
+          { label: "Warm-up (3 min)", exercises: [
+            { name: "Jumping jacks", detail: "60s", badge: "warm-up" },
+            { name: "Arm swings + leg swings", detail: "60s", badge: "warm-up" },
+            { name: "Bodyweight squats", detail: "15 reps", badge: "warm-up" }
+          ]},
+          { label: "Circuit — 4 rounds, 45s rest between rounds", exercises: [
+            { name: "Dumbbell Squat", detail: "12 reps", badge: "×4" },
+            { name: "Push-ups", detail: "12 reps", badge: "×4" },
+            { name: "Dumbbell Row (each arm)", detail: "10 reps", badge: "×4" },
+            { name: "Glute Bridge", detail: "15 reps", badge: "×4" },
+            { name: "Mountain Climbers", detail: "30 reps", badge: "×4" }
+          ]},
+          { label: "Cool-down (3 min)", exercises: [
+            { name: "Standing quad stretch", detail: "30s each leg", badge: "stretch" },
+            { name: "Seated hamstring stretch", detail: "45s each leg", badge: "stretch" }
+          ]}
+        ],
+        tip: "Wear proper trainers even at home — your joints will thank you, especially during high-rep squat and lunge work."
+      }
+    ],
+    45: [
+      {
+        title: "45-Minute Home Strength Session",
+        description: "Upper + lower body with dumbbells",
+        sections: [
+          { label: "Warm-up (5 min)", exercises: [
+            { name: "Jumping jacks or jump rope", detail: "2 min", badge: "warm-up" },
+            { name: "Hip hinges + shoulder rolls", detail: "3 min", badge: "warm-up" }
+          ]},
+          { label: "Lower body — 4 sets, 45s rest", exercises: [
+            { name: "Dumbbell Goblet Squat", detail: "4×12", badge: "quads" },
+            { name: "Single-Leg Hip Thrust", detail: "4×10 each", badge: "glutes" },
+            { name: "Dumbbell Romanian Deadlift", detail: "4×10", badge: "hamstrings" }
+          ]},
+          { label: "Upper body — 3 sets, 40s rest", exercises: [
+            { name: "Push-ups (weighted if easy)", detail: "3×12", badge: "chest" },
+            { name: "Dumbbell Row", detail: "3×10 each arm", badge: "back" },
+            { name: "Dumbbell Shoulder Press", detail: "3×12", badge: "shoulders" }
+          ]},
+          { label: "Core finisher — 2 rounds", exercises: [
+            { name: "Dead Bug", detail: "10 each side", badge: "core" },
+            { name: "Plank", detail: "60 seconds", badge: "core" }
+          ]}
+        ],
+        tip: "If a dumbbell movement feels too easy, slow the tempo — 3 seconds down, 1 second up. It's harder than it sounds and more effective."
+      }
+    ],
+    60: [
+      {
+        title: "60-Minute Home Power Hour",
+        description: "Full body strength + HIIT finisher",
+        sections: [
+          { label: "Warm-up (8 min)", exercises: [
+            { name: "Light jog in place or jumping jacks", detail: "3 min", badge: "warm-up" },
+            { name: "Dynamic stretching — hips, shoulders, spine", detail: "5 min", badge: "warm-up" }
+          ]},
+          { label: "Strength — 4 sets each, 60s rest", exercises: [
+            { name: "Dumbbell Squat (heavy)", detail: "4×10", badge: "strength" },
+            { name: "Dumbbell Deadlift (heavy)", detail: "4×8", badge: "strength" },
+            { name: "Push-up variations", detail: "4×12", badge: "strength" },
+            { name: "Dumbbell Row", detail: "4×10 each arm", badge: "strength" }
+          ]},
+          { label: "HIIT finisher (8 min) — 40s on, 20s rest", exercises: [
+            { name: "Squat jumps", detail: "40s", badge: "HIIT" },
+            { name: "Burpees", detail: "40s", badge: "HIIT" },
+            { name: "High knees", detail: "40s", badge: "HIIT" },
+            { name: "Push-up + shoulder tap", detail: "40s", badge: "HIIT" }
+          ]},
+          { label: "Cool-down (7 min)", exercises: [
+            { name: "Full body stretch sequence", detail: "7 min", badge: "stretch" }
+          ]}
+        ],
+        tip: "The HIIT finisher will feel brutal after strength work. That's exactly the point — it forces your body to tap into stored fat for fuel."
+      }
+    ]
+  },
+
+  outside: {
+    5: [
+      {
+        title: "5-Minute Track Sprints",
+        description: "Pure cardio — 5 sprint intervals",
+        sections: [
+          { label: "5 rounds — alternate sprint and walk", exercises: [
+            { name: "All-out sprint", detail: "30 seconds", badge: "sprint" },
+            { name: "Walk recovery", detail: "30 seconds", badge: "rest" }
+          ]}
+        ],
+        tip: "Sprint at 90% effort — not full speed, but close enough that you can't hold a conversation. Maintain that across all 5 rounds."
+      }
+    ],
+    10: [
+      {
+        title: "10-Minute Sprint + Strength Combo",
+        description: "Bodyweight and cardio back to back",
+        sections: [
+          { label: "4 rounds — move straight through with minimal rest", exercises: [
+            { name: "Sprint (100m or 30 seconds)", detail: "all-out effort", badge: "×4" },
+            { name: "Push-ups", detail: "10 reps", badge: "×4" },
+            { name: "Squat jumps", detail: "10 reps", badge: "×4" }
+          ]}
+        ],
+        tip: "If there's a hill nearby, sprint up it. Uphill running burns more calories and is easier on your knees than flat sprints."
+      }
+    ],
+    15: [
+      {
+        title: "15-Minute Outdoor Power Circuit",
+        description: "Sprint, strength, repeat — 4 rounds",
+        sections: [
+          { label: "Warm-up (2 min)", exercises: [
+            { name: "Light jog + dynamic leg swings", detail: "2 min", badge: "warm-up" }
+          ]},
+          { label: "4 rounds — 30s rest between rounds", exercises: [
+            { name: "Sprint (40m or 20 seconds)", detail: "all-out", badge: "×4" },
+            { name: "Bodyweight Squat", detail: "15 reps", badge: "×4" },
+            { name: "Push-ups", detail: "10 reps", badge: "×4" },
+            { name: "Walking Lunges", detail: "10 each leg", badge: "×4" }
+          ]}
+        ],
+        tip: "Use the sprints to keep your heart rate elevated, then the strength moves to build muscle. This combo is more effective than either alone."
+      }
+    ],
+    20: [
+      {
+        title: "20-Minute Outdoor Tabata",
+        description: "High intensity intervals — bodyweight only",
+        sections: [
+          { label: "Warm-up (3 min)", exercises: [
+            { name: "Easy jog + leg swings", detail: "3 min", badge: "warm-up" }
+          ]},
+          { label: "Tabata — 20s work, 10s rest, 8 rounds per exercise (4 min each)", exercises: [
+            { name: "Sprint or fast run", detail: "20s on / 10s off × 8", badge: "4 min" },
+            { name: "Squat jumps", detail: "20s on / 10s off × 8", badge: "4 min" },
+            { name: "Burpees", detail: "20s on / 10s off × 8", badge: "4 min" }
+          ]}
+        ],
+        tip: "Tabata is 4 minutes per exercise. The 10-second rest is not enough to fully recover — that's intentional. Use a free Tabata timer app."
+      }
+    ],
+    30: [
+      {
+        title: "30-Minute Run + Bodyweight",
+        description: "Cardio base + strength circuits",
+        sections: [
+          { label: "Warm-up jog (5 min)", exercises: [
+            { name: "Easy-pace jog", detail: "5 min", badge: "warm-up" }
+          ]},
+          { label: "Sprint intervals (10 min)", exercises: [
+            { name: "Sprint 200m (or 45 seconds)", detail: "×5 sprints", badge: "sprint" },
+            { name: "Walk recovery", detail: "60s between each sprint", badge: "rest" }
+          ]},
+          { label: "Bodyweight strength (10 min) — 3 rounds", exercises: [
+            { name: "Push-ups", detail: "15 reps", badge: "×3" },
+            { name: "Squat jumps", detail: "15 reps", badge: "×3" },
+            { name: "Plank", detail: "45 seconds", badge: "×3" }
+          ]},
+          { label: "Cool-down walk (5 min)", exercises: [
+            { name: "Easy walk + stretch", detail: "5 min", badge: "cool-down" }
+          ]}
+        ],
+        tip: "Hydrate before this one. Outdoor cardio + strength in the heat will drain you fast. Bring water."
+      }
+    ],
+    45: [
+      {
+        title: "45-Minute Outdoor Athlete Session",
+        description: "Run, sprint, bodyweight — complete session",
+        sections: [
+          { label: "Warm-up jog (5 min)", exercises: [
+            { name: "Easy-pace jog", detail: "5 min", badge: "warm-up" }
+          ]},
+          { label: "Sprint intervals (12 min)", exercises: [
+            { name: "All-out sprint (100m)", detail: "×8 sprints — 60s walk between each", badge: "sprint" }
+          ]},
+          { label: "Bodyweight circuit — 4 rounds, 45s rest", exercises: [
+            { name: "Jump squats", detail: "15 reps", badge: "×4" },
+            { name: "Push-ups", detail: "15 reps", badge: "×4" },
+            { name: "Walking lunges", detail: "12 each leg", badge: "×4" },
+            { name: "Mountain climbers", detail: "30 reps", badge: "×4" }
+          ]},
+          { label: "Cool-down (5 min)", exercises: [
+            { name: "Easy walk + full body stretch", detail: "5 min", badge: "cool-down" }
+          ]}
+        ],
+        tip: "On your sprints, drive your knees up and pump your arms hard — arm drive is what creates speed, not just leg speed."
+      }
+    ],
+    60: [
+      {
+        title: "60-Minute Outdoor Power Run",
+        description: "Steady run + intervals + bodyweight strength",
+        sections: [
+          { label: "Warm-up (8 min)", exercises: [
+            { name: "Easy jog + dynamic warm-up", detail: "8 min", badge: "warm-up" }
+          ]},
+          { label: "Steady run (20 min)", exercises: [
+            { name: "Moderate-pace run", detail: "20 min — conversational pace", badge: "cardio" }
+          ]},
+          { label: "Sprint intervals (10 min)", exercises: [
+            { name: "Sprint 100m + walk back", detail: "×8 rounds", badge: "sprint" }
+          ]},
+          { label: "Strength finisher — 3 rounds", exercises: [
+            { name: "Push-ups", detail: "20 reps", badge: "×3" },
+            { name: "Jump squats", detail: "20 reps", badge: "×3" },
+            { name: "Plank", detail: "60 seconds", badge: "×3" }
+          ]},
+          { label: "Cool-down (7 min)", exercises: [
+            { name: "Easy walk", detail: "3 min", badge: "cool-down" },
+            { name: "Full body stretch", detail: "4 min", badge: "stretch" }
+          ]}
+        ],
+        tip: "Don't skip the cool-down after a long outdoor session. It's what keeps you from being stiff and sore the next day."
+      }
+    ]
+  },
+
+  anywhere: {
+    5: [
+      {
+        title: "5-Minute Anywhere Igniter",
+        description: "Zero equipment — any surface, any space",
+        sections: [
+          { label: "AMRAP — 5 minutes straight, count your rounds", exercises: [
+            { name: "Squat Jumps (or regular squats)", detail: "10 reps", badge: "AMRAP" },
+            { name: "Push-ups (or wall push-ups)", detail: "8 reps", badge: "AMRAP" },
+            { name: "High Knees", detail: "20 reps", badge: "AMRAP" }
+          ]}
+        ],
+        tip: "Can't jump? Do squats. Can't get on the floor? Do wall push-ups. Modify everything — but don't stop moving."
+      },
+      {
+        title: "5-Minute Standing Core",
+        description: "Silent, small-space workout — no mat needed",
+        sections: [
+          { label: "2 rounds — no rest between exercises", exercises: [
+            { name: "Standing oblique crunches", detail: "15 each side", badge: "×2" },
+            { name: "Standing knee-to-elbow", detail: "15 each side", badge: "×2" },
+            { name: "Slow bodyweight squat", detail: "15 reps", badge: "×2" }
+          ]}
+        ],
+        tip: "Standing core work activates far more muscles than floor crunches. Your balance muscles are working the whole time — it's a full-body move."
+      }
+    ],
+    10: [
+      {
+        title: "10-Minute No-Equipment Circuit",
+        description: "Works in a parking lot, hotel room, anywhere",
+        sections: [
+          { label: "3 rounds — 30s rest between rounds", exercises: [
+            { name: "Jump squats (or squat pulses)", detail: "15 reps", badge: "×3" },
+            { name: "Push-ups", detail: "10 reps", badge: "×3" },
+            { name: "Reverse lunges", detail: "10 each leg", badge: "×3" },
+            { name: "Mountain climbers", detail: "20 reps", badge: "×3" }
+          ]}
+        ],
+        tip: "No excuses workout. You have everything you need — your own body. Track the rounds and try to beat it next time."
+      }
+    ],
+    15: [
+      {
+        title: "15-Minute Parking Lot Burn",
+        description: "Full body in minimal space — 4 rounds",
+        sections: [
+          { label: "Warm-up (2 min)", exercises: [
+            { name: "March in place + arm swings", detail: "2 min", badge: "warm-up" }
+          ]},
+          { label: "4 rounds — 30s rest between rounds", exercises: [
+            { name: "Squat Jumps", detail: "15 reps", badge: "×4" },
+            { name: "Push-ups", detail: "12 reps", badge: "×4" },
+            { name: "Alternating Reverse Lunges", detail: "10 each leg", badge: "×4" },
+            { name: "Plank Hold", detail: "30 seconds", badge: "×4" }
+          ]}
+        ],
+        tip: "You don't need a gym floor. Grass, pavement, or a yoga mat all work. The only requirement is that you keep moving."
+      }
+    ],
+    20: [
+      {
+        title: "20-Minute Zero-Equipment Strength",
+        description: "Build strength with just your bodyweight",
+        sections: [
+          { label: "Warm-up (3 min)", exercises: [
+            { name: "Jumping jacks + hip circles", detail: "3 min", badge: "warm-up" }
+          ]},
+          { label: "Lower body — 3 rounds, 40s rest", exercises: [
+            { name: "Sumo squat pulses", detail: "20 reps", badge: "×3" },
+            { name: "Single-leg glute bridge", detail: "12 each leg", badge: "×3" },
+            { name: "Curtsy lunge", detail: "12 each leg", badge: "×3" }
+          ]},
+          { label: "Upper body + core — 3 rounds, 40s rest", exercises: [
+            { name: "Push-ups", detail: "12 reps", badge: "×3" },
+            { name: "Plank shoulder taps", detail: "20 reps", badge: "×3" }
+          ]}
+        ],
+        tip: "Sumo squat pulses are sneaky hard. Keep your weight in your heels and squeeze your glutes at the top of every rep."
+      }
+    ],
+    30: [
+      {
+        title: "30-Minute Bodyweight Full Body",
+        description: "Zero equipment, maximum output — 5 rounds",
+        sections: [
+          { label: "Warm-up (4 min)", exercises: [
+            { name: "Jumping jacks", detail: "60s", badge: "warm-up" },
+            { name: "Arm circles + leg swings", detail: "60s", badge: "warm-up" },
+            { name: "Bodyweight squats + hip circles", detail: "2 min", badge: "warm-up" }
+          ]},
+          { label: "Circuit — 5 rounds, 40s rest between rounds", exercises: [
+            { name: "Squat jumps", detail: "15 reps", badge: "×5" },
+            { name: "Push-ups", detail: "12 reps", badge: "×5" },
+            { name: "Reverse lunges", detail: "10 each leg", badge: "×5" },
+            { name: "Mountain climbers", detail: "30 reps", badge: "×5" }
+          ]},
+          { label: "Cool-down (4 min)", exercises: [
+            { name: "Standing quad + chest stretch", detail: "4 min total", badge: "stretch" }
+          ]}
+        ],
+        tip: "5 rounds is a lot. If you need to drop to 4, do it — but make every rep count. Quality over quantity."
+      }
+    ],
+    45: [
+      {
+        title: "45-Minute Anywhere Athlete",
+        description: "Strength + cardio intervals — no equipment",
+        sections: [
+          { label: "Warm-up (5 min)", exercises: [
+            { name: "Light jog in place + dynamic stretching", detail: "5 min", badge: "warm-up" }
+          ]},
+          { label: "Strength block — 4 rounds, 45s rest", exercises: [
+            { name: "Squat jumps", detail: "15 reps", badge: "×4" },
+            { name: "Push-ups (wide + narrow alternating)", detail: "12 reps", badge: "×4" },
+            { name: "Glute bridges", detail: "20 reps", badge: "×4" },
+            { name: "Plank hold", detail: "45 seconds", badge: "×4" }
+          ]},
+          { label: "Cardio block — 4 rounds of 45s on / 15s rest", exercises: [
+            { name: "High knees", detail: "45s max effort", badge: "×4" },
+            { name: "Burpees", detail: "45s max effort", badge: "×4" }
+          ]},
+          { label: "Cool-down (5 min)", exercises: [
+            { name: "Full body stretch", detail: "5 min", badge: "cool-down" }
+          ]}
+        ],
+        tip: "Burpees are non-negotiable. They hit your entire body in one movement. If you hate them, you're probably doing them right."
+      }
+    ],
+    60: [
+      {
+        title: "60-Minute Bodyweight Beast",
+        description: "Full athlete session — zero equipment",
+        sections: [
+          { label: "Warm-up (8 min)", exercises: [
+            { name: "Jog in place", detail: "2 min", badge: "warm-up" },
+            { name: "Dynamic full-body stretching", detail: "3 min", badge: "warm-up" },
+            { name: "Bodyweight squats + push-ups", detail: "3 min", badge: "warm-up" }
+          ]},
+          { label: "Strength phase — 4 sets, 60s rest", exercises: [
+            { name: "Jump squats", detail: "4×20", badge: "strength" },
+            { name: "Push-ups (3-1 slow tempo)", detail: "4×15", badge: "strength" },
+            { name: "Reverse lunges", detail: "4×12 each leg", badge: "strength" },
+            { name: "Glute bridges", detail: "4×20", badge: "strength" }
+          ]},
+          { label: "HIIT phase (12 min) — 40s on / 20s rest", exercises: [
+            { name: "Burpees", detail: "40s", badge: "HIIT" },
+            { name: "High knees", detail: "40s", badge: "HIIT" },
+            { name: "Mountain climbers", detail: "40s", badge: "HIIT" },
+            { name: "Squat jumps", detail: "40s", badge: "HIIT" }
+          ]},
+          { label: "Core finisher — 2 rounds", exercises: [
+            { name: "Plank", detail: "60 seconds", badge: "core" },
+            { name: "Leg raises", detail: "15 reps", badge: "core" },
+            { name: "Side plank", detail: "30s each side", badge: "core" }
+          ]},
+          { label: "Cool-down (8 min)", exercises: [
+            { name: "Full body stretch sequence", detail: "8 min", badge: "cool-down" }
+          ]}
+        ],
+        tip: "An hour of bodyweight work burns more calories than most people expect. Consistency with this beats sporadic gym visits every time."
+      }
+    ]
+  }
+};
+
+// =====================
+// APP LOGIC
+// =====================
+let selectedTime = null;
+let selectedLocation = null;
+let currentWorkoutIndex = null;
+
+document.querySelectorAll('.time-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.time-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    selectedTime = parseInt(btn.dataset.time);
+    checkReady();
+  });
+});
+
+document.querySelectorAll('.location-card').forEach(card => {
+  card.addEventListener('click', () => {
+    document.querySelectorAll('.location-card').forEach(c => c.classList.remove('active'));
+    card.classList.add('active');
+    selectedLocation = card.dataset.location;
+    checkReady();
+  });
+});
+
+function checkReady() {
+  const btn = document.getElementById('generateBtn');
+  if (selectedTime && selectedLocation) {
+    btn.disabled = false;
+    btn.textContent = 'Generate My Workout →';
+  }
+}
+
+document.getElementById('generateBtn').addEventListener('click', generateWorkout);
+document.getElementById('regenBtn').addEventListener('click', generateWorkout);
+
+function generateWorkout() {
+  const workouts = workoutData[selectedLocation][selectedTime];
+  let index;
+  if (workouts.length === 1) {
+    index = 0;
+  } else {
+    do { index = Math.floor(Math.random() * workouts.length); }
+    while (index === currentWorkoutIndex);
+  }
+  currentWorkoutIndex = index;
+  const workout = workouts[index];
+
+  const locationLabels = { gym: 'Commercial Gym', home: 'Home / Garage', outside: 'Outside / Track', anywhere: 'Anywhere' };
+
+  document.getElementById('workoutBadge').textContent = `${selectedTime} min · ${locationLabels[selectedLocation]}`;
+  document.getElementById('workoutTitle').textContent = workout.title;
+  document.getElementById('workoutMeta').textContent = workout.description;
+
+  let html = '';
+  workout.sections.forEach(section => {
+    html += `<p class="section-label">${section.label}</p>`;
+    section.exercises.forEach((ex, i) => {
+      html += `<div class="exercise-row">
+        <div class="exercise-number">${i + 1}</div>
+        <div class="exercise-info">
+          <div class="exercise-name">${ex.name}</div>
+          <div class="exercise-detail">${ex.detail}</div>
+        </div>
+        <div class="exercise-badge">${ex.badge}</div>
+      </div>`;
+    });
+  });
+
+  document.getElementById('workoutContent').innerHTML = html;
+  document.getElementById('workoutTip').innerHTML = `<strong>Coach Tip</strong>${workout.tip}`;
+
+  const card = document.getElementById('workoutCard');
+  card.classList.add('visible');
+  setTimeout(() => card.scrollIntoView({ behavior: 'smooth', block: 'start' }), 100);
+}
+</script>
+</body>
+</html>
